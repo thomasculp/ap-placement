@@ -8,26 +8,30 @@ import scipy.optimize
 # dimensions: 2-tuple which has size of room (in meters)
 # n: number of 
 # metric: desired number to maximize
-def placement(density, dimensions, n, metric):
-    guess = np.random.rand(2*n)
-    bnds = [(0., 1.) for i in range(2*n)]
+def placement(density, dimensions, n, metric, one_d=False):
+    if not one_d:
+        n = 2 * n
+    guess = np.random.rand(n)
+    bnds = [(0., 1.) for i in range(n)]
     print(guess)
     print(bnds)
-    return scipy.optimize.minimize(fun=metric, x0=guess, args=(density, dimensions),
+    return scipy.optimize.minimize(fun=metric, x0=guess, args=(density, dimensions, one_d),
             bounds=bnds, method='TNC', options={'eps': 3*min(1./density.shape[0], 1./density.shape[1])})
 # 'L-BFGS-B'
 
 # assuming each router has the same amount of throughput, compute average
 # throughput given positions of routers, density map, and dimensions.
 # for partitioning, nearest router will be used
-def throughput(positions, density, dimensions):
+def throughput(positions, density, dimensions, one_d):
     # processing positions
     print(positions)
-    positions = np.array([hard_sig(x) for x in positions]).reshape((len(positions)//2, 2))
-    #positions = positions.reshape((len(positions)//2, 2))
-    positions[:, 0] *= density.shape[0]
-    positions[:, 1] *= density.shape[1]
-    positions = positions.astype(int)
+    if one_d:
+        positions = np.array([to_coords(x, density.shape) for x in [hard_sig(x) for x in positions]])
+    else:
+        positions = np.array([hard_sig(x) for x in positions]).reshape((len(positions)//2, 2))
+        positions[:, 0] *= density.shape[0]
+        positions[:, 1] *= density.shape[1]
+        positions = positions.astype(int)
     print(positions)
     # creating a grid with position labels (distance from origin). offsetting by
     # half a unit to prevent log(0) issues.
@@ -58,16 +62,19 @@ def throughput(positions, density, dimensions):
         all_antennas_bandwidth[i[0] * density.shape[1] + i[1]] = np.full(x, bandwidths[assignment[i]])
     return -np.median(list(itertools.chain.from_iterable(all_antennas_bandwidth)))
 
+
 # assuming each router and antenna has the same amount of power and directivity,
 # compute average power given positions of routers, density map, and dimensions.
-def power(positions, density, dimensions):
+def power(positions, density, dimensions, one_d):
     # processing positions
     print(positions)
-    positions = np.array([hard_sig(x) for x in positions]).reshape((len(positions)//2, 2))
-    #positions = positions.reshape((len(positions)//2, 2))
-    positions[:, 0] *= density.shape[0]
-    positions[:, 1] *= density.shape[1]
-    positions = positions.astype(int)
+    if one_d:
+        positions = np.array([to_coords(x, density.shape) for x in [hard_sig(x) for x in positions]])
+    else:
+        positions = np.array([hard_sig(x) for x in positions]).reshape((len(positions)//2, 2))
+        positions[:, 0] *= density.shape[0]
+        positions[:, 1] *= density.shape[1]
+        positions = positions.astype(int)
     print(positions)
     # creating a grid with position labels (distance from origin). offsetting by
     # half a unit to prevent log(0) issues.
@@ -94,8 +101,6 @@ def power(positions, density, dimensions):
     return -np.median(list(itertools.chain.from_iterable(all_antennas_power)))
 
 
-    #for  index, x in np.ndenumerate(density):
-
 def hard_sig(x):
     if x > 1.:
         return 1.
@@ -108,6 +113,21 @@ def hard_sig(x):
 def norm(x):
     x2 = x ** 2
     return np.sqrt(x2[:, :, 0] + x2[:, :, 1])
+
+
+# u has already been normalized: u \in (0, 1)
+def to_coords(u, shape):
+    p = 2 * (shape[0] + shape[1])
+    length = u * p
+    if length < shape[0]:
+        return [int(length), 0]
+    elif length < shape[0] + shape[1]:
+        return [shape[0] - 1, int(length - shape[0])]
+    elif length < 2 * shape[0] + shape[1]:
+        return [int(shape[0] - (length - shape[0] - shape[1])), shape[1] - 1]
+    else:
+        return [0, int(p - length)]
+
 
 # sample distribution:
 samp_dist = np.array([[1, 1, 0],
@@ -123,4 +143,4 @@ samp_dist = np.array([[1, 1, 0],
 
 a = np.random.randint(2, size=(5,10)).astype('uint8')
 a[0] =  8
-print(placement(a, (4, 100), 2, throughput))
+print(placement(a, (4, 100), 2, throughput, one_d=True))

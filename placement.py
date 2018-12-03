@@ -35,12 +35,9 @@ def throughput(positions, density, dimensions, one_d):
     # case of one dimension, converting the one number to a coordinate along the
     # perimeter of the room. for two dimensions, doing the expected thing...
     if one_d:
-        positions = np.array([to_coords(x, density.shape) for x in [hard_sig(x) for x in positions]])
+        positions = np.array([to_coords_1d(x, density.shape) for x in [hard_sig(x) for x in positions]])
     else:
-        positions = np.array([hard_sig(x) for x in positions]).reshape((len(positions)//2, 2))
-        positions[:, 0] *= density.shape[0]
-        positions[:, 1] *= density.shape[1]
-        positions = positions.astype(int)
+        positions = to_coords_2d(np.array([hard_sig(x) for x in positions]), density.shape)
     print(positions)
     # creating a grid with position labels (distance from origin). offsetting by
     # half a unit to prevent log(0) issues.
@@ -90,12 +87,9 @@ def power(positions, density, dimensions, one_d):
     # case of one dimension, converting the one number to a coordinate along the
     # perimeter of the room. for two dimensions, doing the expected thing...
     if one_d:
-        positions = np.array([to_coords(x, density.shape) for x in [hard_sig(x) for x in positions]])
+        positions = np.array([to_coords_1d(x, density.shape) for x in [hard_sig(x) for x in positions]])
     else:
-        positions = np.array([hard_sig(x) for x in positions]).reshape((len(positions)//2, 2))
-        positions[:, 0] *= density.shape[0]
-        positions[:, 1] *= density.shape[1]
-        positions = positions.astype(int)
+        positions = to_coords_2d(np.array([hard_sig(x) for x in positions]), density.shape)
     print(positions)
     # creating a grid with position labels (distance from origin). offsetting by
     # half a unit to prevent log(0) issues.
@@ -149,7 +143,7 @@ def norm(x):
 # converting a one-dimensional coordinate to a two dimensional coordinate along
 # the perimeter of the density grid.
 # u has already been normalized: u \in (0, 1)
-def to_coords(u, shape):
+def to_coords_1d(u, shape):
     p = 2 * (shape[0] + shape[1])
     length = u * p
     if length < shape[0]:
@@ -160,6 +154,12 @@ def to_coords(u, shape):
         return [int(shape[0] - (length - shape[0] - shape[1])), shape[1] - 1]
     else:
         return [0, int(p - length)]
+
+def to_coords_2d(positions, shape):
+    positions = positions.reshape((len(positions)//2, 2))
+    positions[:, 0] *= shape[0]
+    positions[:, 1] *= shape[1]
+    return positions.astype(int)
 
 
 # sample distribution:
@@ -176,4 +176,4 @@ samp_dist = np.array([[1, 1, 0],
 
 a = np.random.randint(2, size=(5,10)).astype('uint8')
 a[0] =  8
-print(placement(a, (4, 100), 2, throughput, one_d=True))
+print(placement(a, (4, 100), 2, throughput, one_d=False))

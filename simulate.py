@@ -38,8 +38,11 @@ def simulate(repeat, test_distributions):
         one_d) for a in test_distributions] for routers in range(2, 5)] for metric
         in [placement.throughput, placement.power]] for one_d in [True, False]]
 
+print('starting random clusters...')
 random_clusters_results = simulate(10, arrays.random_clusters)
+print('starting future results...')
 future_results = simulate(10, arrays.future)
+print('starting office hours...')
 office_hours_results = simulate(10, arrays.office_hours)
 
 with open('results.dat', 'wb') as f:

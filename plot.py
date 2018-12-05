@@ -17,12 +17,14 @@ future_floats = np.empty(np.array(future).shape)
 office_floats = np.empty(np.array(office_hours).shape)
 
 # storing the actual power/throughput inside them
+# the signs on all of the information were flipped to make use of the minimize
+# operation. Here it is flipped back
 for i, x in np.ndenumerate(clusters):
-    clusters_floats[i] = x.fun
+    clusters_floats[i] = -x.fun
 for i, x in np.ndenumerate(future):
-    future_floats[i] = x.fun
+    future_floats[i] = -x.fun
 for i, x in np.ndenumerate(office_hours):
-    office_floats[i] = x.fun
+    office_floats[i] = -x.fun
 
 # plot power
 plt.plot(np.median(clusters_floats[0,1], axis=1), label='clusters median 1d power')
@@ -31,7 +33,11 @@ plt.plot(np.median(future_floats[0,1], axis=1), label='future median 1d power')
 plt.plot(np.median(future_floats[1,1], axis=1), label='future median 2d power')
 plt.plot(np.median(office_floats[0,1], axis=1), label='office median 1d power')
 plt.plot(np.median(office_floats[1,1], axis=1), label='office median 2d power')
-plt.xticks(np.arange(3), ('2 routers', '3 routers', '4 routers'))
+plt.plot([-1.5] * 3, '#d1d3d6', label='2 ROUTERS, fixed placement, office')
+plt.plot([-0.1] * 3, '#404449', label='2 Routers, fixed placement, office, WIFI')
+plt.xlabel('Number of Routers')
+plt.ylabel('Power (arbitrary units)')
+plt.xticks(np.arange(3), np.arange(2, 5))
 plt.legend()
 plt.title("Power vs. Number of AP's")
 plt.savefig('power.png')

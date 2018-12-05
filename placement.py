@@ -74,7 +74,7 @@ def throughput(positions, density, dimensions, one_d):
     all_antennas_bandwidth = [[] for i in range(density.shape[0] * density.shape[1])]
     for i, x in np.ndenumerate(density):
         all_antennas_bandwidth[i[0] * density.shape[1] + i[1]] = np.full(x, bandwidths[assignment[i]])
-    return np.median(list(itertools.chain.from_iterable(all_antennas_bandwidth)))
+    return -np.median(list(itertools.chain.from_iterable(all_antennas_bandwidth)))
 
 
 # assuming each router and antenna has the same amount of power and directivity,

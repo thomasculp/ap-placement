@@ -38,6 +38,12 @@ results = [[[[optimal_placement(50, a, (4, 100), routers, metric,
     one_d) for a in test_distributions] for routers in range(2, 5)] for metric
     in [placement.throughput, placement.power]] for one_d in [True, False]]
 
+# fixed router positions...
+positions = []
+# the routers are fixed along the side of a wall
+fixed_results = [[[[metric(pos, a, (4, 100), True)] for pos in positions] for a in test_distributions] 
+    for metric in [placement.throughput, placement.power]]
+
 with open('results.dat', 'wb') as f:
     pickle.dump(results, f)
 

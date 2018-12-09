@@ -3,9 +3,16 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('path')
+args = vars(parser.parse_args())
+
+path = args['path']
 
 data = None
-with open('results.dat', 'rb') as f:
+with open(path, 'rb') as f:
     data = pickle.load(f)
 
 # lens(result)=3, stored as tuple of clusters, future, office_hours
@@ -34,11 +41,11 @@ plt.plot(np.median(future_floats[1,1], axis=1), label='future median 2d power')
 plt.plot(np.median(office_floats[0,1], axis=1), label='office median 1d power')
 plt.plot(np.median(office_floats[1,1], axis=1), label='office median 2d power')
 plt.plot([-1.5] * 3, '#d1d3d6', label='2 ROUTERS, fixed placement, office')
-plt.plot([-0.1] * 3, '#404449', label='2 Routers, fixed placement, office, WIFI')
+plt.plot([-0.1] * 3, '#404449', label='2 ROUTERS, fixed placement, office, WIFI')
 plt.xlabel('Number of Routers')
-plt.ylabel('Power (arbitrary units)')
+plt.ylabel('Power (arbitrary log units)')
 plt.xticks(np.arange(3), np.arange(2, 5))
-plt.legend()
+plt.legend(loc=(0.25, 0.4))
 plt.title("Power vs. Number of AP's")
 plt.savefig('power.png')
 plt.close()
@@ -50,7 +57,9 @@ plt.plot(np.median(future_floats[0,0], axis=1), label='future median 1d throughp
 plt.plot(np.median(future_floats[1,0], axis=1), label='future median 2d throughput')
 plt.plot(np.median(office_floats[0,0], axis=1), label='office median 1d throughput')
 plt.plot(np.median(office_floats[1,0], axis=1), label='office median 2d throughput')
-plt.xticks(np.arange(3), ('2 routers', '3 routers', '4 routers'))
+plt.xlabel('Number of Routers')
+plt.ylabel('Throughput (arbitrary units)')
+plt.xticks(np.arange(3), np.arange(2, 5))
 plt.legend(loc=(0.25, 0.1))
 plt.title("Throughput vs. Number of AP's")
 plt.savefig('throughput.png')

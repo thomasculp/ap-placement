@@ -1,6 +1,26 @@
 import numpy as np
+import arrays
 import itertools
 import scipy.optimize
+
+# repeat: number of times to run placement
+# n : number of routers
+# density: 2-d matrix of device placement
+# dimensions: 2-tuple which has size of room (meters)
+# metric: desired number to optimize
+# one_d: boolean, whether or not to place in one dimension
+def optimal_placement(repeat, density, dimensions, n, metric, one_d):
+    return min([placement(density, dimensions, n, metric, one_d)
+        for i in range(repeat)], key=lambda x: x.fun)
+
+
+# in the interest of time, the running of results can be shortened by removing
+# one of the things we are interested in (for example, removing power from the
+# list of metrics
+def simulate(repeat, test_distributions):
+    return [[[[optimal_placement(repeat, a, arrays.s, routers, metric,
+        one_d) for a in test_distributions] for routers in range(2, 5)] for metric
+        in [throughput, power]] for one_d in [True, False]]
 
 
 # density: 2-dimensional matrix which contains number of devices in a cell which
@@ -22,7 +42,7 @@ def placement(density, dimensions, n, metric, one_d=False):
     # change (any smaller and steps will be within the same box on the grid)
     # the method for optimization was picked arbitrarily...
     return scipy.optimize.minimize(fun=metric, x0=guess, args=(density, dimensions, one_d),
-            bounds=bnds, method='TNC', options={'eps': 2*min(1./density.shape[0], 1./density.shape[1])})
+            bounds=bnds, method='TNC', options={'eps': 1.5*min(1./density.shape[0], 1./density.shape[1])})
 # 'L-BFGS-B'
 
 # assuming each router has the same amount of throughput, compute average
@@ -74,7 +94,7 @@ def throughput(positions, density, dimensions, one_d):
     all_antennas_bandwidth = [[] for i in range(density.shape[0] * density.shape[1])]
     for i, x in np.ndenumerate(density):
         all_antennas_bandwidth[i[0] * density.shape[1] + i[1]] = np.full(x, bandwidths[assignment[i]])
-    return -np.median(list(itertools.chain.from_iterable(all_antennas_bandwidth)))
+    return -np.mean(list(itertools.chain.from_iterable(all_antennas_bandwidth)))
 
 
 # assuming each router and antenna has the same amount of power and directivity,
@@ -113,7 +133,7 @@ def power(positions, density, dimensions, one_d):
     all_antennas_power = [[] for i in range(density.shape[0] * density.shape[1])]
     for i, x in np.ndenumerate(density):
         all_antennas_power[i[0] * density.shape[1] + i[1]] = np.full(x, max_power[i])
-    return np.median(list(itertools.chain.from_iterable(all_antennas_power)))
+    return np.mean(list(itertools.chain.from_iterable(all_antennas_power)))
 
 
 # the identity function for 0 < x < 1. otherwise this is saturated at 0 or 1
@@ -175,3 +195,4 @@ def to_coords_2d(positions, shape):
 #a = np.random.randint(2, size=(5,10)).astype('uint8')
 #a[0] =  8
 #print(placement(a, (4, 100), 2, throughput, one_d=False))
+#print(optimal_placement(50, a, (4, 100), 2, placement.throughput, one_d=False))

@@ -3,14 +3,30 @@ import arrays
 import itertools
 import scipy.optimize
 
+
+def simulate_2(repeat, test_distributions):
+    return [[[[placement_2(repeat, a, arrays.s, routers, metric,
+        one_d) for a in test_distributions] for routers in range(2, 5)] for metric
+        in [throughput, power]] for one_d in [True, False]]
+
+
+def placement_2(repeat, density, dimensions, n, metric, one_d=False):
+    fixed = []
+    for _ in range(n-1):
+        fixed.extend(list(optimal_placement(repeat, density, dimensions, 1,
+            metric, one_d, fixed).x))
+    return optimal_placement(repeat, density, dimensions, 1,
+            metric, one_d, fixed)
+
+
 # repeat: number of times to run placement
 # n : number of routers
 # density: 2-d matrix of device placement
 # dimensions: 2-tuple which has size of room (meters)
 # metric: desired number to optimize
 # one_d: boolean, whether or not to place in one dimension
-def optimal_placement(repeat, density, dimensions, n, metric, one_d):
-    return min([placement(density, dimensions, n, metric, one_d)
+def optimal_placement(repeat, density, dimensions, n, metric, one_d, fixed=[]):
+    return min([placement(density, dimensions, n, metric, one_d, fixed)
         for i in range(repeat)], key=lambda x: x.fun)
 
 
@@ -28,7 +44,7 @@ def simulate(repeat, test_distributions):
 # dimensions: 2-tuple which has size of room (in meters)
 # n: number of routers
 # metric: desired number to maximize
-def placement(density, dimensions, n, metric, one_d=False):
+def placement(density, dimensions, n, metric, one_d=False, fixed=[]):
     if not one_d:
         n = 2 * n
     # guess for where the routers should be placed (random)
@@ -41,19 +57,25 @@ def placement(density, dimensions, n, metric, one_d=False):
     # take a step at least the size of the grid length in order to see any
     # change (any smaller and steps will be within the same box on the grid)
     # the method for optimization was picked arbitrarily...
-    return scipy.optimize.minimize(fun=metric, x0=guess, args=(density, dimensions, one_d),
+    return scipy.optimize.minimize(fun=metric, x0=guess, args=(density,
+        dimensions, one_d, fixed),
             bounds=bnds, method='TNC', options={'eps': 1.5*min(1./density.shape[0], 1./density.shape[1])})
 # 'L-BFGS-B'
 
 # assuming each router has the same amount of throughput, compute average
 # throughput given positions of routers, density map, and dimensions.
 # for partitioning, nearest router will be used
-def throughput(positions, density, dimensions, one_d):
+def throughput(positions, density, dimensions, one_d, fixed=[]):
     # processing positions
     #print(positions)
     # putting the input through a rectifier to get valid numbers in (0, 1). in the
     # case of one dimension, converting the one number to a coordinate along the
     # perimeter of the room. for two dimensions, doing the expected thing...
+    # extending positions by the fixed router positions (this is separated out
+    # purely so the optimize function can have a argument in the function
+    # dedicated to the position which will be varied)
+    positions = list(positions)
+    positions.extend(fixed)
     if one_d:
         positions = np.array([to_coords_1d(x, density.shape) for x in [hard_sig(x) for x in positions]])
     else:
@@ -99,12 +121,14 @@ def throughput(positions, density, dimensions, one_d):
 
 # assuming each router and antenna has the same amount of power and directivity,
 # compute average power given positions of routers, density map, and dimensions.
-def power(positions, density, dimensions, one_d):
+def power(positions, density, dimensions, one_d, fixed=[]):
     # processing positions
     #print(positions)
     # putting the input through a rectifier to get valid numbers in (0, 1). in the
     # case of one dimension, converting the one number to a coordinate along the
     # perimeter of the room. for two dimensions, doing the expected thing...
+    positions = list(positions)
+    positions.extend(fixed)
     if one_d:
         positions = np.array([to_coords_1d(x, density.shape) for x in [hard_sig(x) for x in positions]])
     else:

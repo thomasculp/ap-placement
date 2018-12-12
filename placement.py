@@ -35,7 +35,7 @@ def optimal_placement(repeat, density, dimensions, n, metric, one_d, fixed=[]):
 # list of metrics
 def simulate(repeat, test_distributions):
     return [[[[optimal_placement(repeat, a, arrays.s, routers, metric,
-        one_d) for a in test_distributions] for routers in range(2, 5)] for metric
+        one_d) for a in test_distributions] for routers in range(2, 7)] for metric
         in [throughput, power]] for one_d in [True, False]]
 
 
@@ -94,7 +94,7 @@ def throughput(positions, density, dimensions, one_d, fixed=[]):
         dist = mesh - np.array([[p for i in range(density.shape[1])] for j in range(density.shape[0])])
         dist[:, :, 0] *= dimensions[0] / density.shape[0]
         dist[:, :, 1] *= dimensions[1] / density.shape[1]
-        power[i] = np.log10(norm(dist))
+        power[i] = -np.log10(norm(dist))
     # for each position in the density array, computing which router gives the
     # most power. this determines which router that position will get data from.
     # adding the density to counts so that average throughput for all devices
@@ -111,12 +111,12 @@ def throughput(positions, density, dimensions, one_d, fixed=[]):
     # reciprocal of counts gives the percentage of throughput each
     # device connected to that router receives
     bandwidths = 1 / counts
-    # this process puts the throuput each device in the grid receives into an array
+    # this process puts the throughput each device in the grid receives into an array
     # and then takes the median of that array.
     all_antennas_bandwidth = [[] for i in range(density.shape[0] * density.shape[1])]
     for i, x in np.ndenumerate(density):
         all_antennas_bandwidth[i[0] * density.shape[1] + i[1]] = np.full(x, bandwidths[assignment[i]])
-    return -np.mean(list(itertools.chain.from_iterable(all_antennas_bandwidth)))
+    return -np.median(list(itertools.chain.from_iterable(all_antennas_bandwidth)))
 
 
 # assuming each router and antenna has the same amount of power and directivity,
@@ -147,17 +147,19 @@ def power(positions, density, dimensions, one_d, fixed=[]):
         dist = mesh - np.array([[p for i in range(density.shape[1])] for j in range(density.shape[0])])
         dist[:, :, 0] *= dimensions[0] / density.shape[0]
         dist[:, :, 1] *= dimensions[1] / density.shape[1]
-        power[i] = np.log10(norm(dist))
+        power[i] = -np.log10(norm(dist))
     # taking the maximum over all the computed powers to get power received
     max_power = power[0]
     for i in range(1, len(power)):
         max_power = np.maximum(max_power, power[i])
-    # this process puts the throuput each device in the grid receives into an array
+    # this process puts the power each device in the grid receives into an array
     # and then takes the median of that array.
     all_antennas_power = [[] for i in range(density.shape[0] * density.shape[1])]
     for i, x in np.ndenumerate(density):
         all_antennas_power[i[0] * density.shape[1] + i[1]] = np.full(x, max_power[i])
-    return np.mean(list(itertools.chain.from_iterable(all_antennas_power)))
+    # flipping the sign of this because we want to maximize power, but we are
+    # going to run this through a minimize function
+    return -np.median(list(itertools.chain.from_iterable(all_antennas_power)))
 
 
 # the identity function for 0 < x < 1. otherwise this is saturated at 0 or 1

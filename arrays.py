@@ -10,7 +10,6 @@ for i in range(5):
     y = np.random.randint(8, size=s).astype('uint8')
     random_clusters.append(y)
 
-#print(L)
 
 # future VR/AR - 5 times the bandwidth https://venturebeat.com/2017/05/06/the-bandwidth-problem-5-issues-the-vr-industry-must-resolve/
 future = []
@@ -18,7 +17,6 @@ for i in range(5):
     z = np.random.randint(8, 45, size=s).astype('uint8')
     future.append(z)
 
-#print(L2)
 
 # one strip of high usage - office hours
 office_hours = []
@@ -27,7 +25,6 @@ for i in range(5):
     a[i] =  8
     office_hours.append(a)
 
-#print(L3)
 
 # high uniform distribution - meal times
 uniform = []
@@ -35,9 +32,3 @@ for i in range(4, 9):
     b = np.zeros(s)
     b.fill(i)
     uniform.append(b)
-
-#print(L4)
-
-#for l in [L1, L2, L3, L4]:
-#    for x in l:
-#        print(x)

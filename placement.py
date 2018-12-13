@@ -9,7 +9,8 @@ def simulate_2(repeat, test_distributions):
         one_d) for a in test_distributions] for routers in range(2, 5)] for metric
         in [throughput, power]] for one_d in [True, False]]
 
-
+# this placement works by placing the first router optimally, fixing that
+# router, and repeating until there are n routers placed.
 def placement_2(repeat, density, dimensions, n, metric, one_d=False):
     fixed = []
     for _ in range(n-1):
@@ -51,8 +52,6 @@ def placement(density, dimensions, n, metric, one_d=False, fixed=[]):
     guess = np.random.rand(n)
     # the domain is the unit box in R^n
     bnds = [(0., 1.) for i in range(n)]
-    #print(guess)
-    #print(bnds)
     # eps is the step size the algorithm takes to estimate the jacobian. it needs to
     # take a step at least the size of the grid length in order to see any
     # change (any smaller and steps will be within the same box on the grid)
@@ -67,7 +66,6 @@ def placement(density, dimensions, n, metric, one_d=False, fixed=[]):
 # for partitioning, nearest router will be used
 def throughput(positions, density, dimensions, one_d, fixed=[]):
     # processing positions
-    #print(positions)
     # putting the input through a rectifier to get valid numbers in (0, 1). in the
     # case of one dimension, converting the one number to a coordinate along the
     # perimeter of the room. for two dimensions, doing the expected thing...
@@ -80,7 +78,6 @@ def throughput(positions, density, dimensions, one_d, fixed=[]):
         positions = np.array([to_coords_1d(x, density.shape) for x in [hard_sig(x) for x in positions]])
     else:
         positions = to_coords_2d(np.array([hard_sig(x) for x in positions]), density.shape)
-    #print(positions)
     # creating a grid with position labels (distance from origin). offsetting by
     # half a unit to prevent log(0) issues.
     mesh = np.stack(np.mgrid[0:density.shape[0], 0:density.shape[1]], axis=-1).astype('float64')
@@ -123,7 +120,6 @@ def throughput(positions, density, dimensions, one_d, fixed=[]):
 # compute average power given positions of routers, density map, and dimensions.
 def power(positions, density, dimensions, one_d, fixed=[]):
     # processing positions
-    #print(positions)
     # putting the input through a rectifier to get valid numbers in (0, 1). in the
     # case of one dimension, converting the one number to a coordinate along the
     # perimeter of the room. for two dimensions, doing the expected thing...
@@ -133,7 +129,6 @@ def power(positions, density, dimensions, one_d, fixed=[]):
         positions = np.array([to_coords_1d(x, density.shape) for x in [hard_sig(x) for x in positions]])
     else:
         positions = to_coords_2d(np.array([hard_sig(x) for x in positions]), density.shape)
-    #print(positions)
     # creating a grid with position labels (distance from origin). offsetting by
     # half a unit to prevent log(0) issues.
     mesh = np.stack(np.mgrid[0:density.shape[0], 0:density.shape[1]], axis=-1).astype('float64')
@@ -208,20 +203,3 @@ def to_coords_2d(positions, shape):
     positions[:, 1] *= shape[1]
     return positions.astype(int)
 
-
-# sample distribution:
-#samp_dist = np.array([[1, 1, 0],
-#    [0, 0, 0],
-#    [0, 0, 0],
-#    [0, 0, 0],
-#    [0, 0, 0],
-#    [1, 1, 1],
-#    [0, 0, 0],
-#    [0, 0, 0],
-#    [0, 0, 0],
-#    [0, 0, 0]])
-#
-#a = np.random.randint(2, size=(5,10)).astype('uint8')
-#a[0] =  8
-#print(placement(a, (4, 100), 2, throughput, one_d=False))
-#print(optimal_placement(50, a, (4, 100), 2, placement.throughput, one_d=False))

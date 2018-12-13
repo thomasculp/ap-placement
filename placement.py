@@ -188,6 +188,9 @@ def norm(x):
 # the perimeter of the density grid.
 # u has already been normalized: u \in (0, 1)
 def to_coords_1d(u, shape):
+    # for some reason, u can be NaN... not sure why that happens, but it does
+    if np.isnan(u):
+        u = 0
     p = 2 * (shape[0] + shape[1])
     length = u * p
     if length < shape[0]:
